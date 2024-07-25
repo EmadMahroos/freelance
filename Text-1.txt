@@ -1,0 +1,179 @@
+        <?php
+
+
+            ?>
+
+            <script>
+                setInterval(function(){
+                    <?php
+$last_msgid=getTable("msg_id","messages","order by msg_id desc limit 1");
+$last_msg=$last_msgid[0]['msg_id'];
+$new_msgs['msgs']= getTable('*',"messages","where msg_id > '$last_msg' and sender ='$senderid' and reciever ='$clientid' or msg_id > '$last_msg' and sender ='$clientid' and reciever ='$senderid'");
+    
+                    ?>
+                    var z=<?php echo json_encode($last_msg);?>;
+                    var x = <?php echo json_encode($clientid);?>;
+                    var y= <?php echo json_encode($new_msgs);?>;
+
+                    if(y.msgs){
+                        y.msgs.forEach(msg=>{
+                            
+                    $('.'+x).find(".chat-body").append(msg.msg+"<br>"+z+x);
+                            
+                            
+                            });
+                    }else{
+                      $('.'+x).find(".chat-body").append(x);
+
+                    }
+                    },5000);
+            </script>
+
+
+
+
+
+
+
+
+
+
+------------------------------
+<?php
+session_start();
+include"includes/functions/funcs.php";
+include"connect.php";
+              if(isset($_SESSION['user']))
+              {
+                $email = $_SESSION['user'];
+                $reg_status="where reg_status= 0 or 1 and email !='$email'";
+
+              }
+              if(isset($_SESSION['client']))
+              {
+                $email = $_SESSION['client'];
+                $reg_status=getTable("reg_status",'clients',"where email='$email'");
+                if($reg_status[0]['reg_status']==1)
+                {
+                    $reg_status="where reg_status= 0 or 1 and email !='$email'";
+
+                }
+                else
+                {
+                    $reg_status="where reg_status=1";
+
+                }
+              }
+                   $rows=getTable("*",'clients',"$reg_status  ");
+                   $senderid=getTable("client_id",'clients',"where email='$email'");
+                  foreach($rows as $row)
+                  {
+                 
+                      
+                     $current_time = date("Y-m-d H:i:s",time()-5);
+                     $ddate=date($row['last_activity']);
+                      if( $ddate >= $current_time)
+                      {
+                        $clientname = $row['client_name'];
+                        ?>
+          <div class="admin <?php echo $row['client_id']?>" data-class="<?php echo $row['client_id']?>" >
+                       <div class="admin-info" style="display: none">
+                            <span class="client_id" data-class=" <?php echo $row['client_id'];?>"></span>
+                            <span class="sender_id" data-class=" <?php echo $senderid[0]['client_id'];?>"></span>
+                            <span class="client_name" data-class=" <?php echo $clientname;?>"></span>
+                          </div>
+                          <img src="admin/uploads/imgs/8896_20180903_090911.jpg">
+                          <?php
+                            echo $row['client_name'];
+                            echo'<div class="online-sign"></div>';
+                          ?>
+                        
+             </div>
+                    
+                      <?php
+
+                      }
+                   
+                  
+                  }
+                  foreach($rows as $row)
+                  {                       
+                    $current_time = date("Y-m-d H:i:s",time()-5);
+                    $ddate=date($row['last_activity']);                 
+                      if( $ddate < $current_time)
+                      {
+                        $clientname = $row['client_name'];
+      
+                        ?>
+            <div class="admin <?php echo $row['client_id']?>" data-class="<?php echo $row['client_id']?>">
+                          <div class="admin-info" style="display: none">
+                            <span class="client_id" data-class=" <?php echo $row['client_id'];?>"></span>
+                            <span class="sender_id" data-class=" <?php echo $senderid[0]['client_id'];?>"></span>
+                            <span class="client_name" data-class=" <?php echo $clientname;?>"></span>
+                          </div>
+                          <img src="admin/uploads/imgs/8896_20180903_090911.jpg">
+                          <?php
+                            echo $row['client_name'];
+                          ?>
+            </div>
+                      <?php
+    
+                      }
+                      
+                  
+                  }
+                  
+                  #update last activity
+                  $stmt = mysqli_query($con,"update clients set last_activity =now() where email='$email'");
+                    #refresh msgs 
+                  ?>
+
+  
+
+
+    <script>
+        $('.admins .admin').click(function(){
+        
+        
+          
+          var varclient_name = $(this).find(".client_name").data("class");
+          var varclient_id= $(this).data("class");
+          var varsender_id= $(this).find(".sender_id").data("class");
+          j=varsender_id;
+          var varchat = $(".chats ."+varclient_id).data("class");
+          if(varchat==varclient_id)
+          {
+             $(".chats").find("."+varclient_id).css("display","block");
+    
+             $('.minimizing-chats').find("."+varclient_id).remove();
+    
+          }
+          else
+          {
+            
+          $.ajax({
+            url:"chats.php",
+            type:'POST',
+            async:false,
+            cache:false,
+            data:{client_name:varclient_name,client_id:varclient_id,sender_id:varsender_id},
+            success:function(chat){
+             $(".chats").append(chat);
+                
+            }
+            
+            });
+    
+            }
+             var chat = $(this).data("class");
+             setTimeout(function(){
+         $("."+chat).find(".chat-body-con").scrollTop($("."+chat).find(".chat-body").height());
+                  $(".chats ."+chat).find(".text").focus();
+               
+               
+               },20);
+    
+          });
+        
+    </script>
+                
